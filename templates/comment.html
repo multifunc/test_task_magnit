@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Добавление комментария</title>
+</head>
+<body>
+<div align="center">
+    <div align="center" style="font-weight: bold">
+        <a href="/index">Главная</a>
+    </div>
+    <h1 align="center">Добавление комментария</h1>
+
+    <form name="comment_form" action="/comment" method="POST" onsubmit="return validate_comment_form();">
+        <div>
+            <label>
+                <span style="font-weight: bold">Фамилия</span><span style="color: red">*</span><br>
+                <input name="last_name" type="text" maxlength="50" pattern="[а-яА-ЯA-Za-z0-9]{{2,}}"
+                       placeholder="Фамилия" size="30">
+            </label>
+        </div>
+        <br>
+
+        <div>
+            <label>
+                <span style="font-weight: bold">Имя</span><span style="color: red">*</span><br>
+                <input name="first_name" type="text" maxlength="50" pattern="[а-яА-ЯA-Za-z0-9]{{2,}}"
+                       placeholder="Имя" size="30">
+            </label>
+        </div>
+        <br>
+
+        <div>
+            <label>
+                <span style="font-weight: bold">Отчество</span><br>
+                <input name="patronymic" type="text" maxlength="50" pattern="[а-яА-ЯA-Za-z0-9]{{2,}}"
+                       placeholder="Отчество" size="30">
+            </label>
+        </div>
+        <br>
+
+        <div>
+            <label>
+                <span style="font-weight: bold">Регион</span><br>
+                <select name="region" style="width: 250px" onchange="change_region(this)">
+                    <option>Выберите регион</option>
+                    {option_regions}
+                </select>
+            </label>
+        </div>
+        <br>
+
+        <div>
+            <label>
+                <span style="font-weight: bold">Город</span><br>
+                <select name="city" style="width: 250px">
+                    <option>Выберите город</option>
+                </select>
+            </label>
+        </div>
+        <br>
+
+        <div>
+            <label>
+                <span style="font-weight: bold">Контактный телефон</span><br>
+                <input name="phone" type="tel" maxlength="25" pattern="\(\d{{3,5}}\)\s\d{{5,}}"
+                       placeholder="(код города) номер" size="30">
+            </label>
+        </div>
+        <br>
+
+        <div>
+            <label>
+                <span style="font-weight: bold">Электороная почта</span><br>
+                <input name="email" type="email" maxlength="50"
+                       pattern="[a-zA-Z0-9._]{{8,}}@[a-zA-Z0-9.-]{{2,}}\.[a-zA-Z]{{2,4}}" placeholder="example@example.com"
+                       size="30">
+            </label>
+        </div>
+        <br>
+
+        <div>
+            <label>
+                <span style="font-weight: bold">Комментарий</span><span style="color: red">*</span><br>
+                <textarea name="comment" typeof="text" rows="3" cols="30" placeholder="Текст"></textarea>
+            </label>
+        </div>
+        <div>
+            <span style="color: grey">* обязательные поля</span><br>
+        </div>
+        <br>
+        <div>
+            <input type="submit" value="Добавить">
+        </div>
+    </form>
+</div>
+</body>
+<script type="text/javascript">
+    function change_region(select_region) {{
+        let value = select_region.options[select_region.selectedIndex].value;
+        if (value) {{
+            let select_city = document.comment_form.city;
+            if (select_city.options){{
+                while (select_city.options.length){{
+                    select_city.remove(0);
+                }}
+            }}
+            let ajax = {{
+                request: function(method, url, region_id) {{
+                    let self = this;
+                    this.xhr = null;
+                    if (window.ActiveXObject) {{
+                        this.xhr = new ActiveXObject('Microsoft.XMLHTTP');
+                    }} else if (window.XMLHttpRequest) {{
+                        this.xhr = new window.XMLHttpRequest();
+                    }}
+                    if (this.xhr) {{
+                        this.xhr.onreadystatechange = function() {{
+                            if (self.xhr.readyState == 4) {{
+                                if (self.xhr.status == 200) {{
+                                    load_cities(JSON.parse(self.xhr.responseText));
+                                }} else {{
+                                    load_cities([])
+                                }}
+                            }}
+                        }};
+                        if (method == 'get') {{
+                            this.xhr.open(method, url + "?id=" + region_id, true);
+                            this.xhr.send();
+                        }} else {{
+                            this.xhr.open(method, url, true);
+                            this.xhr.send('id=' + region_id);
+                        }}
+                    }}
+                    return this;
+                }}
+            }}.request('post', 'region', value)
+        }}
+    }}
+
+    function load_cities(cities) {{
+        let select_city = document.comment_form.city;
+        let option = document.createElement("option");
+        option.text = "Выберите город";
+        select_city.appendChild(option);
+        for (let i=0; i < cities.length; ++i){{
+            option = document.createElement("option");
+            option.value = cities[i][0];
+            option.text = cities[i][1];
+            select_city.appendChild(option)
+        }}
+    }}
+
+    function validate_comment_form() {{
+        let result = true;
+        let last_name = document.comment_form.last_name.value.trim();
+        if (!last_name) {{
+            {{
+                document.comment_form.last_name.style.border = '2px solid red';
+                result = false;
+            }}
+        }} else {{
+            {{
+                document.comment_form.last_name.style.border = '';
+            }}
+        }}
+        let first_name = document.comment_form.first_name.value.trim();
+        if (!first_name) {{
+            {{
+                document.comment_form.first_name.style.border = '2px solid red';
+                result = false;
+            }}
+        }} else {{
+            {{
+                document.comment_form.first_name.style.border = '';
+            }}
+        }}
+        let phone = document.comment_form.phone.value.trim();
+        if (phone && !/\(\d{{3,5}}\)\s*\d{{5,}}/.test(phone)) {{
+            {{
+                document.comment_form.phone.style.border = '2px solid red';
+                result = false;
+            }}
+        }} else {{
+            {{
+                document.comment_form.phone.style.border = "";
+            }}
+        }}
+        let email = document.comment_form.email.value.trim();
+        if (email && !/[a-zA-Z0-9._]{{8,}}@[a-zA-Z0-9.-]{{2,}}\.[a-zA-Z]{{2,4}}/.test(email)) {{
+            {{
+                document.comment_form.email.style.border = '2px solid red';
+                result = false;
+            }}
+        }} else {{
+            {{
+                document.comment_form.email.style.border = "";
+            }}
+        }}
+        let comment = document.comment_form.comment.value.trim();
+        if (!comment) {{
+            {{
+                document.comment_form.comment.style.border = '2px solid red';
+                result = false;
+            }}
+        }} else {{
+            {{
+                document.comment_form.comment.style.border = "";
+            }}
+        }}
+        return result;
+    }}
+</script>
+
+</html>
